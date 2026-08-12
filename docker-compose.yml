@@ -20,7 +20,10 @@ services:
       timeout: 5s
       retries: 5
 
-  app:
+  meetingscheduler:
+    container_name: meetingScheduler
+    image: meetingscheduler:latest
+
     build:
       context: .
       dockerfile: Dockerfile
