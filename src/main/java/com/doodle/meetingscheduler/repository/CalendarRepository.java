@@ -13,8 +13,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface CalendarRepository
-        extends JpaRepository<Calendar, UUID> {
+public interface CalendarRepository extends JpaRepository<Calendar, UUID> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<Calendar> findByUserId(UUID userId);
@@ -27,11 +26,7 @@ public interface CalendarRepository
             WHERE c.user.id IN :userIds
             ORDER BY c.id
             """)
-    List<Calendar> findAllByUserIdsForUpdate(
-            Collection<UUID> userIds
-    );
+    List<Calendar> findAllByUserIdsForUpdate(Collection<UUID> userIds);
 
-    List<Calendar> findAllByUser_IdIn(
-            Collection<UUID> userIds
-    );
+    List<Calendar> findAllByUser_IdIn(Collection<UUID> userIds);
 }

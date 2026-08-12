@@ -39,115 +39,49 @@ public class AvailabilityService {
     }
 
     @Transactional(readOnly = true)
-    public AvailabilityResponse getAvailability(
-            Set<UUID> userIds,
-            Instant startTime,
-            Instant endTime
-    ) {
-        validateRequest(
-                userIds,
-                startTime,
-                endTime
-        );
+    public AvailabilityResponse getAvailability(Set<UUID> userIds, Instant startTime, Instant endTime) {
+        validateRequest(userIds, startTime, endTime);
 
-        List<Calendar> calendars =
-                calendarRepository.findAllByUser_IdIn(userIds);
+        List<Calendar> calendars = calendarRepository.findAllByUser_IdIn(userIds);
+        validateAllUsersExist(userIds, calendars);
 
-        validateAllUsersExist(
-                userIds,
-                calendars
-        );
+        List<UUID> calendarIds = calendars.stream()
+                .map(Calendar::getId)
+                .toList();
 
-        List<UUID> calendarIds =
-                calendars.stream()
-                        .map(Calendar::getId)
-                        .toList();
+        List<TimeSlot> slots = timeSlotRepository.findAllInRange(calendarIds, startTime, endTime);
 
-        List<TimeSlot> slots =
-                timeSlotRepository.findAllInRange(
-                        calendarIds,
-                        startTime,
-                        endTime
-                );
-
-        Map<UUID, List<AvailabilitySlotResponse>> slotsByUser =
-                new LinkedHashMap<>();
-
+        Map<UUID, List<AvailabilitySlotResponse>> slotsByUser = new LinkedHashMap<>();
         for (Calendar calendar : calendars) {
-            slotsByUser.put(
-                    calendar.getUser().getId(),
-                    new ArrayList<>()
-            );
+            slotsByUser.put(calendar.getUser().getId(), new ArrayList<>());
         }
 
         for (TimeSlot slot : slots) {
-            UUID userId =
-                    slot.getCalendar()
-                            .getUser()
-                            .getId();
-
-            slotsByUser.get(userId)
-                    .add(
-                            new AvailabilitySlotResponse(
-                                    slot.getStartTime(),
-                                    slot.getEndTime(),
-                                    slot.getStatus()
-                            )
-                    );
+            UUID userId = slot.getCalendar().getUser().getId();
+            slotsByUser.get(userId).add(new AvailabilitySlotResponse(slot.getStartTime(), slot.getEndTime(), slot.getStatus()));
         }
 
-        List<UserAvailabilityResponse> users =
-                slotsByUser.entrySet()
-                        .stream()
-                        .map(entry ->
-                                new UserAvailabilityResponse(
-                                        entry.getKey(),
-                                        List.copyOf(entry.getValue())
-                                )
-                        )
-                        .toList();
+        List<UserAvailabilityResponse> users = slotsByUser.entrySet().stream()
+                .map(entry -> new UserAvailabilityResponse(entry.getKey(), List.copyOf(entry.getValue())))
+                .toList();
 
-        return new AvailabilityResponse(
-                startTime,
-                endTime,
-                users
-        );
+        return new AvailabilityResponse(startTime, endTime, users);
     }
 
-    private void validateRequest(
-            Set<UUID> userIds,
-            Instant startTime,
-            Instant endTime
-    ) {
+    private void validateRequest(Set<UUID> userIds, Instant startTime, Instant endTime) {
         if (userIds == null || userIds.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "At least one user must be selected"
-            );
+            throw new IllegalArgumentException("At least one user must be selected");
         }
 
-        if (startTime == null ||
-                endTime == null ||
-                !startTime.isBefore(endTime)) {
-
+        if (startTime == null || endTime == null || !startTime.isBefore(endTime)) {
             throw new InvalidTimeRangeException();
         }
     }
 
-    private void validateAllUsersExist(
-            Collection<UUID> requestedUserIds,
-            List<Calendar> calendars
-    ) {
-        Set<UUID> foundUserIds =
-                calendars.stream()
-                        .map(Calendar::getUser)
-                        .map(User::getId)
-                        .collect(Collectors.toSet());
-
-        requestedUserIds.stream()
-                .filter(id -> !foundUserIds.contains(id))
-                .findFirst()
-                .ifPresent(id -> {
-                    throw new UserNotFoundException(id);
-                });
+    private void validateAllUsersExist(Collection<UUID> requestedUserIds, List<Calendar> calendars) {
+        Set<UUID> foundUserIds = calendars.stream().map(Calendar::getUser).map(User::getId).collect(Collectors.toSet());
+        requestedUserIds.stream().filter(id -> !foundUserIds.contains(id)).findFirst().ifPresent(id -> {
+            throw new UserNotFoundException(id);
+        });
     }
 }

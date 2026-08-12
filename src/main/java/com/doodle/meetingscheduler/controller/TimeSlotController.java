@@ -26,51 +26,23 @@ public class TimeSlotController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public TimeSlotResponse createSlot(
-            @PathVariable UUID userId,
-            @Valid @RequestBody CreateSlotRequest request
-    ) {
-        return timeSlotService.createSlot(
-                userId,
-                request
-        );
+    public TimeSlotResponse createSlot(@PathVariable UUID userId, @Valid @RequestBody CreateSlotRequest request) {
+        return timeSlotService.createSlot(userId, request);
     }
 
     @PutMapping("/{slotId}")
-    public TimeSlotResponse updateSlot(
-            @PathVariable UUID userId,
-            @PathVariable UUID slotId,
-            @Valid @RequestBody UpdateSlotRequest request
-    ) {
-        return timeSlotService.updateSlot(
-                userId,
-                slotId,
-                request
-        );
+    public TimeSlotResponse updateSlot(@PathVariable UUID userId, @PathVariable UUID slotId, @Valid @RequestBody UpdateSlotRequest request) {
+        return timeSlotService.updateSlot(userId, slotId, request);
     }
 
     @PatchMapping("/{slotId}/status")
-    public TimeSlotResponse updateStatus(
-            @PathVariable UUID userId,
-            @PathVariable UUID slotId,
-            @Valid @RequestBody UpdateSlotStatusRequest request
-    ) {
-        return timeSlotService.updateStatus(
-                userId,
-                slotId,
-                request
-        );
+    public TimeSlotResponse updateStatus(@PathVariable UUID userId, @PathVariable UUID slotId, @Valid @RequestBody UpdateSlotStatusRequest request) {
+        return timeSlotService.updateStatus(userId, slotId, request);
     }
 
     @DeleteMapping("/{slotId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteSlot(
-            @PathVariable UUID userId,
-            @PathVariable UUID slotId
-    ) {
-        timeSlotService.deleteSlot(
-                userId,
-                slotId
-        );
+    public void deleteSlot(@PathVariable UUID userId, @PathVariable UUID slotId) {
+        timeSlotService.deleteSlot(userId, slotId);
     }
 }

@@ -3,14 +3,38 @@ spring:
     name: meetingScheduler
 
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/meetingScheduler}
-    username: ${DB_USERNAME:scheduler}
-    password: ${DB_PASSWORD:scheduler}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/meetingscheduler}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
 
   jpa:
     open-in-view: false
     hibernate:
       ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
 
   flyway:
     enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+
+  endpoint:
+    health:
+      show-details: always
+
+  metrics:
+    tags:
+      application: ${spring.application.name}

@@ -28,153 +28,66 @@ public class TimeSlotService {
     private final TimeSlotRepository timeSlotRepository;
     private final CalendarRepository calendarRepository;
 
-    public TimeSlotService(
-            TimeSlotRepository timeSlotRepository,
-            CalendarRepository calendarRepository
-    ) {
+    public TimeSlotService(TimeSlotRepository timeSlotRepository, CalendarRepository calendarRepository) {
         this.timeSlotRepository = timeSlotRepository;
         this.calendarRepository = calendarRepository;
     }
 
     @Transactional
-    public TimeSlotResponse createSlot(
-            UUID userId,
-            CreateSlotRequest request
-    ) {
+    public TimeSlotResponse createSlot(UUID userId, CreateSlotRequest request) {
         Calendar calendar = lockCalendar(userId);
-
-        Instant endTime = calculateEndTime(
-                request.startTime(),
-                request.durationMinutes()
-        );
-
-        if (timeSlotRepository.existsOverlappingSlot(
-                calendar.getId(),
-                request.startTime(),
-                endTime
-        )) {
+        Instant endTime = calculateEndTime(request.startTime(), request.durationMinutes());
+        if (timeSlotRepository.existsOverlappingSlot(calendar.getId(), request.startTime(), endTime)) {
             throw new SlotOverlapException();
         }
-
-        TimeSlot slot = new TimeSlot(
-                calendar,
-                request.startTime(),
-                endTime,
-                SlotStatus.FREE
-        );
-
+        TimeSlot slot = new TimeSlot(calendar, request.startTime(), endTime, SlotStatus.FREE);
         return saveSlot(slot);
     }
 
     @Transactional
-    public TimeSlotResponse updateSlot(
-            UUID userId,
-            UUID slotId,
-            UpdateSlotRequest request
-    ) {
+    public TimeSlotResponse updateSlot(UUID userId, UUID slotId, UpdateSlotRequest request) {
         lockCalendar(userId);
-
-        TimeSlot slot = findSlot(
-                userId,
-                slotId
-        );
-
+        TimeSlot slot = findSlot(userId, slotId);
         ensureNotBookedByMeeting(slot);
-
-        Instant endTime = calculateEndTime(
-                request.startTime(),
-                request.durationMinutes()
-        );
-
-        if (timeSlotRepository.existsOverlappingSlot(
-                slot.getCalendar().getId(),
-                request.startTime(),
-                endTime,
-                slotId
-        )) {
+        Instant endTime = calculateEndTime(request.startTime(), request.durationMinutes());
+        if (timeSlotRepository.existsOverlappingSlot(slot.getCalendar().getId(), request.startTime(), endTime, slotId)) {
             throw new SlotOverlapException();
         }
-
-        slot.changeTimeRange(
-                request.startTime(),
-                endTime
-        );
-
+        slot.changeTimeRange(request.startTime(), endTime);
         return saveSlot(slot);
     }
 
     @Transactional
-    public TimeSlotResponse updateStatus(
-            UUID userId,
-            UUID slotId,
-            UpdateSlotStatusRequest request
-    ) {
+    public TimeSlotResponse updateStatus(UUID userId, UUID slotId, UpdateSlotStatusRequest request) {
         lockCalendar(userId);
-
-        TimeSlot slot = findSlot(
-                userId,
-                slotId
-        );
-
+        TimeSlot slot = findSlot(userId, slotId);
         ensureNotBookedByMeeting(slot);
-
         if (request.status() == SlotStatus.BUSY) {
             slot.markBusy();
         } else {
             slot.markFree();
         }
-
-        return toResponse(
-                timeSlotRepository.saveAndFlush(slot)
-        );
+        return toResponse(timeSlotRepository.saveAndFlush(slot));
     }
 
     @Transactional
-    public void deleteSlot(
-            UUID userId,
-            UUID slotId
-    ) {
+    public void deleteSlot(UUID userId, UUID slotId) {
         lockCalendar(userId);
-
-        TimeSlot slot = findSlot(
-                userId,
-                slotId
-        );
-
+        TimeSlot slot = findSlot(userId, slotId);
         ensureNotBookedByMeeting(slot);
-
         timeSlotRepository.delete(slot);
     }
 
     private Calendar lockCalendar(UUID userId) {
-        return calendarRepository
-                .findByUserId(userId)
-                .orElseThrow(
-                        () -> new UserNotFoundException(userId)
-                );
+        return calendarRepository.findByUserId(userId).orElseThrow(() -> new UserNotFoundException(userId));
     }
 
-    private TimeSlot findSlot(
-            UUID userId,
-            UUID slotId
-    ) {
-        return timeSlotRepository
-                .findByIdAndCalendarUserId(
-                        slotId,
-                        userId
-                )
-                .orElseThrow(
-                        () -> new TimeSlotNotFoundException(slotId)
-                );
+    private TimeSlot findSlot(UUID userId, UUID slotId) {
+        return timeSlotRepository.findByIdAndCalendarUserId(slotId, userId).orElseThrow(() -> new TimeSlotNotFoundException(slotId));
     }
 
-    private Instant calculateEndTime(
-            Instant startTime,
-            long durationMinutes
-    ) {
-        return startTime.plus(
-                Duration.ofMinutes(durationMinutes)
-        );
+    private Instant calculateEndTime(Instant startTime, long durationMinutes) {
+        return startTime.plus(Duration.ofMinutes(durationMinutes));
     }
 
     private void ensureNotBookedByMeeting(TimeSlot slot) {
@@ -185,22 +98,14 @@ public class TimeSlotService {
 
     private TimeSlotResponse saveSlot(TimeSlot slot) {
         try {
-            TimeSlot savedSlot =
-                    timeSlotRepository.saveAndFlush(slot);
-
+            TimeSlot savedSlot = timeSlotRepository.saveAndFlush(slot);
             return toResponse(savedSlot);
-
         } catch (DataIntegrityViolationException exception) {
             throw new SlotOverlapException();
         }
     }
 
     private TimeSlotResponse toResponse(TimeSlot slot) {
-        return new TimeSlotResponse(
-                slot.getId(),
-                slot.getStartTime(),
-                slot.getEndTime(),
-                slot.getStatus()
-        );
+        return new TimeSlotResponse(slot.getId(), slot.getStartTime(), slot.getEndTime(), slot.getStatus());
     }
 }

@@ -18,22 +18,12 @@ public class AvailabilityController {
 
     private final AvailabilityService availabilityService;
 
-    public AvailabilityController(
-            AvailabilityService availabilityService
-    ) {
+    public AvailabilityController(AvailabilityService availabilityService) {
         this.availabilityService = availabilityService;
     }
 
     @GetMapping
-    public AvailabilityResponse getAvailability(
-            @RequestParam Set<UUID> userIds,
-            @RequestParam Instant startTime,
-            @RequestParam Instant endTime
-    ) {
-        return availabilityService.getAvailability(
-                userIds,
-                startTime,
-                endTime
-        );
+    public AvailabilityResponse getAvailability(@RequestParam Set<UUID> userIds, @RequestParam Instant startTime, @RequestParam Instant endTime) {
+        return availabilityService.getAvailability(userIds, startTime, endTime);
     }
 }

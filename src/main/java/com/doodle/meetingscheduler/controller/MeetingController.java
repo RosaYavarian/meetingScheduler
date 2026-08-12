@@ -17,23 +17,13 @@ public class MeetingController {
 
     private final MeetingService meetingService;
 
-    public MeetingController(
-            MeetingService meetingService
-    ) {
+    public MeetingController(MeetingService meetingService) {
         this.meetingService = meetingService;
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public MeetingResponse createMeeting(
-            @PathVariable UUID organizerId,
-            @PathVariable UUID slotId,
-            @Valid @RequestBody CreateMeetingRequest request
-    ) {
-        return meetingService.createMeeting(
-                organizerId,
-                slotId,
-                request
-        );
+    public MeetingResponse createMeeting(@PathVariable UUID organizerId, @PathVariable UUID slotId, @Valid @RequestBody CreateMeetingRequest request) {
+        return meetingService.createMeeting(organizerId, slotId, request);
     }
 }

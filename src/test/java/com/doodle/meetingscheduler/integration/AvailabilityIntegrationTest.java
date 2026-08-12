@@ -22,7 +22,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import java.time.Instant;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @Testcontainers
@@ -30,8 +30,7 @@ class AvailabilityIntegrationTest {
 
     @Container
     @ServiceConnection
-    static PostgreSQLContainer postgres =
-            new PostgreSQLContainer("postgres:17-alpine");
+    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:17-alpine");
 
     @Autowired
     private UserRepository userRepository;
@@ -47,84 +46,31 @@ class AvailabilityIntegrationTest {
 
     @Test
     void shouldReturnFreeAndBusySlots() {
-        User user = userRepository.saveAndFlush(
-                new User(
-                        "Alice",
-                        "alice@example.com"
-                )
-        );
+        User user = userRepository.saveAndFlush(new User("Alice", "alice@example.com"));
 
-        Calendar calendar =
-                calendarRepository.saveAndFlush(
-                        new Calendar(user)
-                );
+        Calendar calendar = calendarRepository.saveAndFlush(new Calendar(user));
+        Instant freeSlotStart = Instant.parse("2026-08-15T08:00:00Z");
+        Instant freeSlotEnd = Instant.parse("2026-08-15T09:00:00Z");
 
-        timeSlotRepository.saveAndFlush(
-                new TimeSlot(
-                        calendar,
-                        Instant.parse(
-                                "2026-08-15T08:00:00Z"
-                        ),
-                        Instant.parse(
-                                "2026-08-15T09:00:00Z"
-                        ),
-                        SlotStatus.FREE
-                )
-        );
+        Instant busySlotStart = Instant.parse("2026-08-15T10:00:00Z");
+        Instant busySlotEnd = Instant.parse("2026-08-15T11:00:00Z");
 
-        timeSlotRepository.saveAndFlush(
-                new TimeSlot(
-                        calendar,
-                        Instant.parse(
-                                "2026-08-15T10:00:00Z"
-                        ),
-                        Instant.parse(
-                                "2026-08-15T11:00:00Z"
-                        ),
-                        SlotStatus.BUSY
-                )
-        );
+        timeSlotRepository.saveAndFlush(new TimeSlot(calendar, freeSlotStart, freeSlotEnd, SlotStatus.FREE));
+        timeSlotRepository.saveAndFlush(new TimeSlot(calendar, busySlotStart, busySlotEnd, SlotStatus.BUSY));
 
-        var response =
-                availabilityService.getAvailability(
-                        Set.of(user.getId()),
-                        Instant.parse(
-                                "2026-08-15T07:00:00Z"
-                        ),
-                        Instant.parse(
-                                "2026-08-15T12:00:00Z"
-                        )
-                );
+        Instant rangeStart = Instant.parse("2026-08-15T07:00:00Z");
+        Instant rangeEnd = Instant.parse("2026-08-15T12:00:00Z");
 
-        assertEquals(
-                1,
-                response.users().size()
-        );
+        var response = availabilityService.getAvailability(Set.of(user.getId()), rangeStart, rangeEnd);
 
-        assertEquals(
-                2,
-                response.users()
-                        .getFirst()
-                        .slots()
-                        .size()
-        );
+        assertThat(response.users()).hasSize(1);
 
-        assertEquals(
-                SlotStatus.FREE,
-                response.users()
-                        .getFirst()
-                        .slots()
-                        .getFirst()
-                        .status()
-        );
+        var userAvailability = response.users().getFirst();
+        assertThat(userAvailability.userId()).isEqualTo(user.getId());
 
-        assertEquals(
-                SlotStatus.BUSY,
-                response.users()
-                        .getFirst()
-                        .slots()
-                        .get(1)
-                        .status()
-        );
+        assertThat(userAvailability.slots())
+                .hasSize(2)
+                .extracting("status")
+                .containsExactly(SlotStatus.FREE, SlotStatus.BUSY);
     }
 }

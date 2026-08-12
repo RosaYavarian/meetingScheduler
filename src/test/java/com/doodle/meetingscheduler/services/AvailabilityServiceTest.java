@@ -8,41 +8,34 @@ import com.doodle.meetingscheduler.exceptions.InvalidTimeRangeException;
 import com.doodle.meetingscheduler.repository.CalendarRepository;
 import com.doodle.meetingscheduler.repository.TimeSlotRepository;
 import com.doodle.meetingscheduler.service.AvailabilityService;
-
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class AvailabilityServiceTest {
 
+    @Mock
     private CalendarRepository calendarRepository;
+
+    @Mock
     private TimeSlotRepository timeSlotRepository;
 
+    @InjectMocks
     private AvailabilityService availabilityService;
-
-    @BeforeEach
-    void setUp() {
-        calendarRepository =
-                mock(CalendarRepository.class);
-
-        timeSlotRepository =
-                mock(TimeSlotRepository.class);
-
-        availabilityService =
-                new AvailabilityService(
-                        calendarRepository,
-                        timeSlotRepository
-                );
-    }
 
     @Test
     void shouldReturnAvailabilityForSelectedUsers() {
@@ -53,87 +46,34 @@ class AvailabilityServiceTest {
         Calendar calendar = mock(Calendar.class);
 
         when(user.getId()).thenReturn(userId);
+        when(calendar.getId()).thenReturn(calendarId);
+        when(calendar.getUser()).thenReturn(user);
 
-        when(calendar.getId())
-                .thenReturn(calendarId);
+        var start = Instant.parse("2026-08-15T08:00:00Z");
+        var end = Instant.parse("2026-08-15T12:00:00Z");
 
-        when(calendar.getUser())
-                .thenReturn(user);
+        var slot = new TimeSlot(calendar, Instant.parse("2026-08-15T09:00:00Z"), Instant.parse("2026-08-15T10:00:00Z"), SlotStatus.FREE);
 
-        Instant start =
-                Instant.parse("2026-08-15T08:00:00Z");
+        given(calendarRepository.findAllByUser_IdIn(Set.of(userId))).willReturn(List.of(calendar));
 
-        Instant end =
-                Instant.parse("2026-08-15T12:00:00Z");
+        given(timeSlotRepository.findAllInRange(List.of(calendarId), start, end)).willReturn(List.of(slot));
 
-        TimeSlot slot = new TimeSlot(
-                calendar,
-                Instant.parse("2026-08-15T09:00:00Z"),
-                Instant.parse("2026-08-15T10:00:00Z"),
-                SlotStatus.FREE
-        );
+        var response = availabilityService.getAvailability(Set.of(userId), start, end);
 
-        when(calendarRepository.findAllByUser_IdIn(
-                Set.of(userId)
-        )).thenReturn(
-                List.of(calendar)
-        );
+        assertThat(response.startTime()).isEqualTo(start);
+        assertThat(response.endTime()).isEqualTo(end);
+        assertThat(response.users()).hasSize(1);
 
-        when(timeSlotRepository.findAllInRange(
-                List.of(calendarId),
-                start,
-                end
-        )).thenReturn(
-                List.of(slot)
-        );
-
-        var response =
-                availabilityService.getAvailability(
-                        Set.of(userId),
-                        start,
-                        end
-                );
-
-        assertEquals(
-                start,
-                response.startTime()
-        );
-
-        assertEquals(
-                end,
-                response.endTime()
-        );
-
-        assertEquals(
-                1,
-                response.users().size()
-        );
-
-        assertEquals(
-                userId,
-                response.users().getFirst().userId()
-        );
-
-        assertEquals(
-                1,
-                response.users()
-                        .getFirst()
-                        .slots()
-                        .size()
-        );
-
-        assertEquals(
-                SlotStatus.FREE,
-                response.users()
-                        .getFirst()
-                        .slots()
-                        .getFirst()
-                        .status()
-        );
+        var userAvailability = response.users().getFirst();
+        assertThat(userAvailability.userId()).isEqualTo(user.getId());
+        assertThat(userAvailability.slots()).hasSize(1);
+        assertThat(userAvailability.slots().getFirst().status()).isEqualTo(SlotStatus.FREE);
     }
+
 
     @Test
     void shouldReturnUserWithNoSlots() {
+
         UUID userId = UUID.randomUUID();
         UUID calendarId = UUID.randomUUID();
 
@@ -144,65 +84,31 @@ class AvailabilityServiceTest {
         when(calendar.getId()).thenReturn(calendarId);
         when(calendar.getUser()).thenReturn(user);
 
-        when(calendarRepository.findAllByUser_IdIn(
-                Set.of(userId)
-        )).thenReturn(
-                List.of(calendar)
-        );
+        var start = Instant.parse("2026-08-15T08:00:00Z");
+        var end = Instant.parse("2026-08-15T12:00:00Z");
 
-        when(timeSlotRepository.findAllInRange(
-                any(),
-                any(),
-                any()
-        )).thenReturn(List.of());
+        given(calendarRepository.findAllByUser_IdIn(Set.of(userId))).
+                willReturn(List.of(calendar));
 
-        var response =
-                availabilityService.getAvailability(
-                        Set.of(userId),
-                        Instant.parse(
-                                "2026-08-15T08:00:00Z"
-                        ),
-                        Instant.parse(
-                                "2026-08-15T12:00:00Z"
-                        )
-                );
+        given(timeSlotRepository.findAllInRange(List.of(calendar.getId()), start, end)).
+                willReturn(List.of());
 
-        assertEquals(
-                1,
-                response.users().size()
-        );
 
-        assertEquals(
-                0,
-                response.users()
-                        .getFirst()
-                        .slots()
-                        .size()
-        );
+        var response = availabilityService.getAvailability(Set.of(userId), start, end);
+
+
+        assertThat(response.users()).hasSize(1);
+        assertThat(response.users().getFirst().slots()).isEmpty();
     }
 
     @Test
     void shouldRejectInvalidTimeRange() {
-        UUID userId = UUID.randomUUID();
+        var userId = UUID.randomUUID();
+        var start = Instant.parse("2026-08-15T12:00:00Z");
+        var end = Instant.parse("2026-08-15T08:00:00Z");
 
-        Instant start =
-                Instant.parse("2026-08-15T12:00:00Z");
+        assertThatThrownBy(() -> availabilityService.getAvailability(Set.of(userId), start, end)).isInstanceOf(InvalidTimeRangeException.class);
 
-        Instant end =
-                Instant.parse("2026-08-15T08:00:00Z");
-
-        assertThrows(
-                InvalidTimeRangeException.class,
-                () -> availabilityService.getAvailability(
-                        Set.of(userId),
-                        start,
-                        end
-                )
-        );
-
-        verifyNoInteractions(
-                calendarRepository,
-                timeSlotRepository
-        );
+        verifyNoInteractions(calendarRepository, timeSlotRepository);
     }
 }
