@@ -75,4 +75,17 @@ public class GlobalExceptionHandler {
                 .status(status)
                 .body(response);
     }
+
+    @ExceptionHandler({
+            ParticipantUnavailableException.class,
+            SlotNotAvailableException.class
+    })
+    public ResponseEntity<ErrorResponse> handleSchedulingConflict(
+            RuntimeException exception
+    ) {
+        return buildErrorResponse(
+                HttpStatus.CONFLICT,
+                exception.getMessage()
+        );
+    }
 }

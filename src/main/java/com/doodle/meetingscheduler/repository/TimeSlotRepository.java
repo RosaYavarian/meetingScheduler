@@ -1,11 +1,14 @@
 package com.doodle.meetingscheduler.repository;
 
+import com.doodle.meetingscheduler.domain.slot.SlotStatus;
 import com.doodle.meetingscheduler.domain.slot.TimeSlot;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.time.Instant;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -43,5 +46,13 @@ public interface TimeSlotRepository
     Optional<TimeSlot> findByIdAndCalendarUserId(
             UUID slotId,
             UUID userId
+    );
+
+    List<TimeSlot>
+    findAllByCalendarIdInAndStartTimeAndEndTimeAndStatus(
+            Collection<UUID> calendarIds,
+            Instant startTime,
+            Instant endTime,
+            SlotStatus status
     );
 }
