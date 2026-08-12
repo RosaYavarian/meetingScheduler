@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: meetingScheduler-db
+
+    environment:
+      POSTGRES_DB: meetingScheduler
+      POSTGRES_USER: scheduler
+      POSTGRES_PASSWORD: scheduler
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scheduler -d meetingScheduler"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/meetingScheduler
+      DB_USERNAME: scheduler
+      DB_PASSWORD: scheduler
+
+    ports:
+      - "8080:8080"
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+
+volumes:
+  postgres_data:
