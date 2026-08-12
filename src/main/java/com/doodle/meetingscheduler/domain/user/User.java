@@ -3,6 +3,7 @@ package com.doodle.meetingscheduler.domain.user;
 import jakarta.persistence.*;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.UUID;
 
 @Entity
@@ -26,8 +27,8 @@ public class User {
     }
 
     public User(String name, String email) {
-        this.name = name;
-        this.email = email;
+        this.name = Objects.requireNonNull(name).trim();
+        this.email = Objects.requireNonNull(email).trim().toLowerCase();
     }
 
     public UUID getId() {
