@@ -1,7 +1,7 @@
 package com.doodle.meetingscheduler.controllers;
 
 import com.doodle.meetingscheduler.controller.UserController;
-import com.doodle.meetingscheduler.controller.dto.UserResponse;
+import com.doodle.meetingscheduler.controller.dto.user.UserResponse;
 import com.doodle.meetingscheduler.exceptions.UserAlreadyExistsException;
 import com.doodle.meetingscheduler.service.UserService;
 import org.junit.jupiter.api.Test;

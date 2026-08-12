@@ -1,7 +1,7 @@
 package com.doodle.meetingscheduler.service;
 
-import com.doodle.meetingscheduler.controller.dto.CreateUserRequest;
-import com.doodle.meetingscheduler.controller.dto.UserResponse;
+import com.doodle.meetingscheduler.controller.dto.user.CreateUserRequest;
+import com.doodle.meetingscheduler.controller.dto.user.UserResponse;
 import com.doodle.meetingscheduler.domain.calendar.Calendar;
 import com.doodle.meetingscheduler.domain.user.User;
 import com.doodle.meetingscheduler.exceptions.UserAlreadyExistsException;

@@ -1,4 +1,4 @@
-package com.doodle.meetingscheduler.controller.dto;
+package com.doodle.meetingscheduler.controller.dto.user;
 
 import java.util.UUID;
 

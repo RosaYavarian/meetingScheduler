@@ -1,7 +1,7 @@
 package com.doodle.meetingscheduler.controller;
 
-import com.doodle.meetingscheduler.controller.dto.CreateUserRequest;
-import com.doodle.meetingscheduler.controller.dto.UserResponse;
+import com.doodle.meetingscheduler.controller.dto.user.CreateUserRequest;
+import com.doodle.meetingscheduler.controller.dto.user.UserResponse;
 import com.doodle.meetingscheduler.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
