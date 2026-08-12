@@ -55,4 +55,20 @@ public interface TimeSlotRepository
             Instant endTime,
             SlotStatus status
     );
+
+    @Query("""
+            SELECT s
+            FROM TimeSlot s
+            JOIN FETCH s.calendar c
+            JOIN FETCH c.user
+            WHERE c.id IN :calendarIds
+              AND s.startTime < :endTime
+              AND s.endTime > :startTime
+            ORDER BY s.startTime
+            """)
+    List<TimeSlot> findAllInRange(
+            Collection<UUID> calendarIds,
+            Instant startTime,
+            Instant endTime
+    );
 }

@@ -30,4 +30,8 @@ public interface CalendarRepository
     List<Calendar> findAllByUserIdsForUpdate(
             Collection<UUID> userIds
     );
+
+    List<Calendar> findAllByUser_IdIn(
+            Collection<UUID> userIds
+    );
 }
