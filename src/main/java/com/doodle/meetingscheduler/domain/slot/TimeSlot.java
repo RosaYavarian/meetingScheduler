@@ -56,12 +56,17 @@ public class TimeSlot {
 
         this.status = Objects.requireNonNull(status, "Slot status must not be null");
 
-        validateTimeRange();
+        validateTimeRange(startTime, endTime);
     }
 
-    private void validateTimeRange() {
+    private static void validateTimeRange(
+            Instant startTime,
+            Instant endTime
+    ) {
         if (!startTime.isBefore(endTime)) {
-            throw new IllegalArgumentException("Slot start time must be before end time");
+            throw new IllegalArgumentException(
+                    "Slot start time must be before end time"
+            );
         }
     }
 
@@ -129,5 +134,24 @@ public class TimeSlot {
         }
 
         this.status = SlotStatus.FREE;
+    }
+    public void changeTimeRange(Instant startTime, Instant endTime) {
+        Objects.requireNonNull(startTime, "Start time must not be null");
+        Objects.requireNonNull(endTime, "End time must not be null");
+
+        if (meeting != null) {
+            throw new IllegalStateException(
+                    "A slot booked by a meeting cannot be modified"
+            );
+        }
+
+        validateTimeRange(startTime, endTime);
+
+        this.startTime = startTime;
+        this.endTime = endTime;
+    }
+
+    public boolean isBookedByMeeting() {
+        return meeting != null;
     }
 }

@@ -14,15 +14,65 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleUserAlreadyExists(
             UserAlreadyExistsException exception
     ) {
+        return buildErrorResponse(
+                HttpStatus.CONFLICT,
+                exception.getMessage()
+        );
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleUserNotFound(
+            UserNotFoundException exception
+    ) {
+        return buildErrorResponse(
+                HttpStatus.NOT_FOUND,
+                exception.getMessage()
+        );
+    }
+
+    @ExceptionHandler(TimeSlotNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleSlotNotFound(
+            TimeSlotNotFoundException exception
+    ) {
+        return buildErrorResponse(
+                HttpStatus.NOT_FOUND,
+                exception.getMessage()
+        );
+    }
+
+    @ExceptionHandler(SlotOverlapException.class)
+    public ResponseEntity<ErrorResponse> handleSlotOverlap(
+            SlotOverlapException exception
+    ) {
+        return buildErrorResponse(
+                HttpStatus.CONFLICT,
+                exception.getMessage()
+        );
+    }
+
+    @ExceptionHandler(SlotModificationNotAllowedException.class)
+    public ResponseEntity<ErrorResponse> handleSlotModificationNotAllowed(
+            SlotModificationNotAllowedException exception
+    ) {
+        return buildErrorResponse(
+                HttpStatus.CONFLICT,
+                exception.getMessage()
+        );
+    }
+
+    private ResponseEntity<ErrorResponse> buildErrorResponse(
+            HttpStatus status,
+            String message
+    ) {
         ErrorResponse response = new ErrorResponse(
-                HttpStatus.CONFLICT.value(),
-                HttpStatus.CONFLICT.getReasonPhrase(),
-                exception.getMessage(),
+                status.value(),
+                status.getReasonPhrase(),
+                message,
                 Instant.now()
         );
 
         return ResponseEntity
-                .status(HttpStatus.CONFLICT)
+                .status(status)
                 .body(response);
     }
 }
